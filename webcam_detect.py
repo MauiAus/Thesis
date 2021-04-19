@@ -22,7 +22,7 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
     # grab the dimensions of the frame and then construct a blob
     # from it
     (h, w) = frame.shape[:2]
-    blob = cv2.dnn.blobFromImage(frame, 1.0, (224, 224),
+    blob = cv2.dnn.blobFromImage(frame, 1.0, (128, 128),
                                  (104.0, 177.0, 123.0))
 
     # pass the blob through the network and obtain the face detections
@@ -59,7 +59,7 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
             # ordering, resize it to 224x224, and preprocess it
             face = frame[startY:endY, startX:endX]
             face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-            face = cv2.resize(face, (224, 224))
+            face = cv2.resize(face, (128, 128))
             face = img_to_array(face)
             face = preprocess_input(face)
 
@@ -74,7 +74,7 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
         # faces at the same time rather than one-by-one predictions
         # in the above `for` loop
         faces = np.array(faces, dtype="float32")
-        preds = maskNet.predict(faces, batch_size=32)
+        preds = maskNet.predict(faces, batch_size=16)
 
     # return a 2-tuple of the face locations and their corresponding
     # locations
@@ -87,7 +87,7 @@ weightsPath = r"face_detector\res10_300x300_ssd_iter_140000.caffemodel"
 faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
 # load the face mask detector model from disk
-maskNet = load_model("NasNetMobile.model")
+maskNet = load_model("MobileNetV2.model")
 
 # initialize the video stream
 print("[INFO] starting video stream...")
@@ -109,11 +109,34 @@ while True:
     for (box, pred) in zip(locs, preds):
         # unpack the bounding box and predictions
         (startX, startY, endX, endY) = box
-        (improperMask,mask, withoutMask) = pred
+        #(improperMask,mask, withoutMask) = pred
+        (withoutMask,improperMask,mask) = pred
+        #["NFMD", "IFMD", "CFMD"]
+        (CFMD,IFMD,NFMD) = pred
 
         # determine the class label and color we'll use to draw
         # the bounding box and text
-
+        if CFMD > IFMD:
+            label = "Mask"
+            color = (0, 255, 0)
+        elif IFMD > NFMD:
+            label = "Improper Mask"
+            color = (255, 255, 0)
+        else:
+            label = "No Mask"
+            color = (0, 0, 255)
+        '''
+        if NFMD > CFMD and NFMD > IFMD:
+            label = "No Mask"
+            color = (0, 0, 255)
+        elif IFMD > CFMD and IFMD > NFMD:
+            label = "Improper Mask"
+            color = (255, 255, 0)
+        elif CFMD > IFMD and CFMD > NFMD:
+            label = "Mask"
+            color = (0, 255, 0)
+        '''
+        '''
         if withoutMask > mask and withoutMask > improperMask:
             label = "No Mask"
             color = (0, 0, 255)
@@ -123,6 +146,7 @@ while True:
         elif mask > improperMask and mask > withoutMask:
             label = "Mask"
             color = (0, 255, 0)
+        '''
 
         # include the probability in the label
         label = "{}: {:.2f}%".format(label, max(improperMask, mask, withoutMask) * 100)
