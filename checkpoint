@@ -1,2 +1,2 @@
-model_checkpoint_path: "MNV2GRAY_model"
-all_model_checkpoint_paths: "MNV2GRAY_model"
+model_checkpoint_path: "Nasnet_model"
+all_model_checkpoint_paths: "Nasnet_model"

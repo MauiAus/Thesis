@@ -19,137 +19,155 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import tensorflow as tf
+import pandas as pd
 from imutils import paths
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# initialize the initial learning rate, number of epochs to train for,
-# and batch size
-INIT_LR = 1e-4
-EPOCHS = 10
-BS = 16
 
-DIRECTORY = r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Gray"
-CATEGORIES = ["NFMD", "IFMD", "CFMD"]
-
-# grab the list of images in our dataset directory, then initialize
-# the list of data (i.e., images) and class images
-print("[INFO] loading images...")
-
-data = []
-labels = []
-
-try:
-    tf_gpus = tf.config.list_physical_devices('GPU')
-    for gpu in tf_gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
-except:
-    pass
-
-for category in CATEGORIES:
-    path = os.path.join(DIRECTORY, category)
-    #class_num = CATEGORIES.index(category)
-    for img in os.listdir(path):
-        img_path = os.path.join(path, img)
-        image = load_img(img_path, color_mode='grayscale',target_size=(128,128))#image = load_img(img_path, target_size=(224, 224))
-        image = img_to_array(image)
-        image = preprocess_input(image)
+def autoAI(DIRECTORY):
+    # initialize the initial learning rate, number of epochs to train for,
+    # and batch size
+    INIT_LR = 1e-4
+    EPOCHS = 10
+    BS = 64
 
 
-        data.append(image)
-        labels.append(category)
-        print(img_path)
+    CATEGORIES = ["NFMD", "IFMD", "CFMD"]
 
-# perform one-hot encoding on the labels
-lb = LabelBinarizer()
-labels = lb.fit_transform(labels)
+    # grab the list of images in our dataset directory, then initialize
+    # the list of data (i.e., images) and class images
+    print("[INFO] loading images...")
 
-#print(labels[0])
+    data = []
+    labels = []
 
-#labels = to_categorical(labels)
+    try:
+        tf_gpus = tf.config.list_physical_devices('GPU')
+        for gpu in tf_gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except:
+        pass
 
-#print(labels)
+    for category in CATEGORIES:
+        path = os.path.join(DIRECTORY, category)
+        #class_num = CATEGORIES.index(category)
+        for img in os.listdir(path):
+            try:
+                img_path = os.path.join(path, img)
+                image = load_img(img_path)#image = load_img(img_path, target_size=(224, 224))
+                image = img_to_array(image)
+                image = preprocess_input(image)
 
-data = np.array(data, dtype="float32")
-labels = np.array(labels, dtype="float32")
+                data.append(image)
+                labels.append(category)
+                print(img_path)
+            except Exception:
+                pass
 
-print(data.shape)
-print(labels.shape)
+    # perform one-hot encoding on the labels
+    lb = LabelBinarizer()
+    labels = lb.fit_transform(labels)
 
-(trainX, testX, trainY, testY) = train_test_split(data, labels,
-                                                  test_size=0.20, stratify=labels, random_state=42)
+    #print(labels[0])
 
-aug = ImageDataGenerator(
-    rotation_range=20,
-    zoom_range=0.15,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.15,
-    horizontal_flip=True,
-    fill_mode="nearest")
+    #labels = to_categorical(labels)
 
-# load the MobileNetV2 network, ensuring the head FC layer sets are
-# left off
-baseModel = MobileNetV2(weights="imagenet", include_top=False,
-                        input_tensor=Input(shape=(128, 128, 3)))
+    #print(labels)
 
-# construct the head of the model that will be placed on top of the
-# the base model
-headModel = baseModel.output
-headModel = AveragePooling2D(pool_size=(4, 4))(headModel)
-headModel = Flatten(name="flatten")(headModel)
-headModel = Dense(64, activation="relu")(headModel)
-headModel = Dropout(0.5)(headModel)
-headModel = Dense(3, activation="softmax")(headModel)
+    data = np.array(data, dtype="float32")
+    labels = np.array(labels, dtype="float32")
 
-# place the head FC model on top of the base model (this will become
-# the actual model we will train)
-model = Model(inputs=baseModel.input, outputs=headModel)
+    print(data.shape)
+    print(labels.shape)
 
-print(model.summary())
+    (trainX, testX, trainY, testY) = train_test_split(data, labels,
+                                                      test_size=0.20, stratify=labels, random_state=42)
 
-# loop over all layers in the base model and freeze them so they will
-# *not* be updated during the first training process
-for layer in baseModel.layers:
-    layer.trainable = False
+    aug = ImageDataGenerator(
+        rotation_range=20,
+        zoom_range=0.15,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.15,
+        horizontal_flip=True,
+        fill_mode="nearest")
 
-# compile our model
-print("[INFO] compiling model...")
-opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
+    # load the MobileNetV2 network, ensuring the head FC layer sets are
+    # left off
+    baseModel = NASNetMobile(weights="imagenet", include_top=False,
+                            input_tensor=Input(shape=(128, 128, 3)))
 
-#load weights
-#model.load_weights('MNV2_model_gray')
+    # construct the head of the model that will be placed on top of the
+    # the base model
+    headModel = baseModel.output
+    headModel = AveragePooling2D(pool_size=(4, 4))(headModel)
+    headModel = Flatten(name="flatten")(headModel)
+    headModel = Dense(64, activation="relu")(headModel)
+    headModel = Dropout(0.5)(headModel)
+    headModel = Dense(3, activation="softmax")(headModel)
 
-model.compile(loss="binary_crossentropy", optimizer=opt,
-              metrics=["accuracy"])
+    # place the head FC model on top of the base model (this will become
+    # the actual model we will train)
+    model = Model(inputs=baseModel.input, outputs=headModel)
 
-# train the head of the network
-print("[INFO] training head...")
-H = model.fit(
-    aug.flow(trainX, trainY, batch_size=BS),
-    steps_per_epoch=len(trainX) // BS,
-    validation_data=(testX, testY),
-    validation_steps=len(testX) // BS,
-    epochs=EPOCHS)
+    print(model.summary())
 
-# make predictions on the testing set
-print("[INFO] evaluating network...")
-predIdxs = model.predict(testX, batch_size=BS)
+    # loop over all layers in the base model and freeze them so they will
+    # *not* be updated during the first training process
+    for layer in baseModel.layers:
+        layer.trainable = False
 
-# for each image in the testing set we need to find the index of the
-# label with corresponding largest predicted probability
-predIdxs = np.argmax(predIdxs, axis=1)
+    # compile our model
+    print("[INFO] compiling model...")
+    opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
 
-# show a nicely formatted classification report
-print(classification_report(testY.argmax(axis=1), predIdxs,
-                            target_names=lb.classes_))
+    #load weights
+    model.load_weights('Nasnet_model')
 
-# serialize the model to disk
-print("[INFO] saving mask detector model...")
-#model.save_weights('MNV2_model')
-model.save("MobileNetV2.model", save_format="h5")
+    model.compile(loss="binary_crossentropy", optimizer=opt,
+                  metrics=["accuracy"])
 
+    # train the head of the network
+    print("[INFO] training head...")
+    H = model.fit(
+        aug.flow(trainX, trainY, batch_size=BS),
+        steps_per_epoch=len(trainX) // BS,
+        validation_data=(testX, testY),
+        validation_steps=len(testX) // BS,
+        epochs=EPOCHS)
+
+    # make predictions on the testing set
+    print("[INFO] evaluating network...")
+    predIdxs = model.predict(testX, batch_size=BS)
+
+    # for each image in the testing set we need to find the index of the
+    # label with corresponding largest predicted probability
+    predIdxs = np.argmax(predIdxs, axis=1)
+
+    # show a nicely formatted classification report
+    print(classification_report(testY.argmax(axis=1), predIdxs,
+                                target_names=lb.classes_))
+
+    # serialize the model to disk
+    print("[INFO] saving mask detector model...")
+    model.save_weights('Nasnet_model')
+    model.save("Nasnet.model", save_format="h5")
+    df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in H.history.items()]))
+    df.to_csv('Nasnet.csv', mode='a', header=False, index=False)
+
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_2")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_3")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_4")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_5")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_6")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_7")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_8")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_9")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_10")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_11")
+autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_12")
 '''
 # plot the training loss and accuracy
 N = EPOCHS

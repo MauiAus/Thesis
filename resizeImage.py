@@ -1,7 +1,7 @@
 from PIL import Image
 import os, sys
 
-path = ('C:/Users/markaustin/Desktop/Thesis/Datasets/Exp_Batch_10/CFMD//')
+path = ('C:/Users/markaustin/Desktop/Thesis/Datasets/Exp_Batch_12/IFMD//')
 dirs = os.listdir( path )
 
 def resize():
@@ -15,7 +15,7 @@ def resize():
 
 resize()
 
-path = ('C:/Users/markaustin/Desktop/Thesis/Datasets/Exp_Batch_10/IFMD//')
+path = ('C:/Users/markaustin/Desktop/Thesis/Datasets/Exp_Batch_12/CFMD//')
 dirs = os.listdir( path )
 
 def resize():
