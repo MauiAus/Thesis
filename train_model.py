@@ -60,7 +60,7 @@ def autoAI(DIRECTORY):
                 image = load_img(img_path)#image = load_img(img_path, target_size=(224, 224))
                 image = img_to_array(image)
                 #change preprocess according to model
-                image = tensorflow.python.keras.applications.mobilenet_v2.preprocess_input(image)
+                image = tf.keras.applications.mobilenet_v3.preprocess_input(image)
                 data.append(image)
                 labels.append(category)
                 print(img_path)
@@ -97,7 +97,7 @@ def autoAI(DIRECTORY):
 
     # load the CNN, ensuring the head FC layer sets are
     # Change the model accordingly
-    baseModel = tf.keras.applications.MobileNetV2(weights="imagenet", include_top=False,
+    baseModel = tf.keras.applications.MobileNetV3Small(weights="imagenet", include_top=False,
                             input_tensor=Input(shape=(128, 128, 3)))
 
     # construct the head of the model that will be placed on top of the
@@ -125,7 +125,7 @@ def autoAI(DIRECTORY):
     opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
 
     #create a checkpoint
-    checkpoint_path = "models/nasnet.ckpt"
+    checkpoint_path = "models/mobilenetv3small.ckpt"
     checkpoint_dir = os.path.dirname(checkpoint_path)
 
     # Create a callback that saves the model's weights
@@ -167,9 +167,9 @@ def autoAI(DIRECTORY):
     #model.save_weights('Nasnet_model')
     #model.save("Nasnet.model", save_format="h5")
     model.save_weights(checkpoint_path)
-    model.save("saved_model/Nasnet")
+    model.save("saved_model/MobileNETV3Small")
     df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in H.history.items()]))
-    df.to_csv('Nasnet.csv', mode='a', header=False, index=False)
+    df.to_csv('MobileNETV3Small.csv', mode='a', header=False, index=False)
 
 #autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_1")
 #import sys
