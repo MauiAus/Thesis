@@ -30,7 +30,7 @@ def autoAI(DIRECTORY):
     # initialize the initial learning rate, number of epochs to train for,
     # and batch size
     INIT_LR = 1e-4
-    EPOCHS = 10
+    EPOCHS = 3
     BS = 64
 
 
@@ -123,8 +123,18 @@ def autoAI(DIRECTORY):
     print("[INFO] compiling model...")
     opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
 
+    #create a checkpoint
+    checkpoint_path = "models/nasnet.ckpt"
+    checkpoint_dir = os.path.dirname(checkpoint_path)
+
+    # Create a callback that saves the model's weights
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_path,
+        verbose=1,
+        save_weights_only=True,)
+
     #load weights
-    model.load_weights('Nasnet_model')
+    model.load_weights(checkpoint_path)
 
     model.compile(loss="binary_crossentropy", optimizer=opt,
                   metrics=["accuracy"])
@@ -136,7 +146,8 @@ def autoAI(DIRECTORY):
         steps_per_epoch=len(trainX) // BS,
         validation_data=(testX, testY),
         validation_steps=len(testX) // BS,
-        epochs=EPOCHS)
+        epochs=EPOCHS,
+        callbacks=[cp_callback])
 
     # make predictions on the testing set
     print("[INFO] evaluating network...")
@@ -152,22 +163,27 @@ def autoAI(DIRECTORY):
 
     # serialize the model to disk
     print("[INFO] saving mask detector model...")
-    model.save_weights('Nasnet_model')
-    model.save("Nasnet.model", save_format="h5")
+    #model.save_weights('Nasnet_model')
+    #model.save("Nasnet.model", save_format="h5")
+    model.save_weights(checkpoint_path)
+    model.save("saved_model/Nasnet")
     df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in H.history.items()]))
     df.to_csv('Nasnet.csv', mode='a', header=False, index=False)
 
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_2")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_3")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_4")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_5")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_6")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_7")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_8")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_9")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_10")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_11")
-autoAI(r"C:\Users\markaustin\Desktop\Thesis\Datasets\Exp_Batch_12")
+#autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_1")
+#import sys
+#sys.exit()
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_2")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_3")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_4")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_5")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_6")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_7")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_8")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_9")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_10")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_11")
+autoAI(r"C:\Users\marka\OneDrive\Documents\Thesis\Datasets\Exp_Batch_12")
 '''
 # plot the training loss and accuracy
 N = EPOCHS
