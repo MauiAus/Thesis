@@ -1,4 +1,5 @@
 # import the necessary packages
+import tensorflow.python.keras.applications.mobilenet_v2
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications import MobileNetV3Small
@@ -11,6 +12,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+#Change the preprocess according to the model used
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.preprocessing.image import load_img
@@ -25,12 +27,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-
 def autoAI(DIRECTORY):
     # initialize the initial learning rate, number of epochs to train for,
     # and batch size
     INIT_LR = 1e-4
-    EPOCHS = 3
+    EPOCHS = 2
     BS = 64
 
 
@@ -58,8 +59,8 @@ def autoAI(DIRECTORY):
                 img_path = os.path.join(path, img)
                 image = load_img(img_path)#image = load_img(img_path, target_size=(224, 224))
                 image = img_to_array(image)
-                image = preprocess_input(image)
-
+                #change preprocess according to model
+                image = tensorflow.python.keras.applications.mobilenet_v2.preprocess_input(image)
                 data.append(image)
                 labels.append(category)
                 print(img_path)
@@ -94,9 +95,9 @@ def autoAI(DIRECTORY):
         horizontal_flip=True,
         fill_mode="nearest")
 
-    # load the MobileNetV2 network, ensuring the head FC layer sets are
-    # left off
-    baseModel = NASNetMobile(weights="imagenet", include_top=False,
+    # load the CNN, ensuring the head FC layer sets are
+    # Change the model accordingly
+    baseModel = tf.keras.applications.MobileNetV2(weights="imagenet", include_top=False,
                             input_tensor=Input(shape=(128, 128, 3)))
 
     # construct the head of the model that will be placed on top of the
