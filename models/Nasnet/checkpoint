@@ -1,2 +1,2 @@
-model_checkpoint_path: "nasnet.ckpt"
-all_model_checkpoint_paths: "nasnet.ckpt"
+model_checkpoint_path: "nasnetmobile.ckpt"
+all_model_checkpoint_paths: "nasnetmobile.ckpt"
