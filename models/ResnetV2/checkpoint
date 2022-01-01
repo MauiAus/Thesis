@@ -1,0 +1,2 @@
+model_checkpoint_path: "ResnetV2.ckpt"
+all_model_checkpoint_paths: "ResnetV2.ckpt"
