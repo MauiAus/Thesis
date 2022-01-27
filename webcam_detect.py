@@ -4,6 +4,7 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 import tensorflow as tf
 from imutils.video import VideoStream
+from imutils.video import FPS
 import numpy as np
 import imutils
 import time
@@ -86,12 +87,14 @@ prototxtPath = r"face_detector\deploy.prototxt"
 weightsPath = r"face_detector\res10_300x300_ssd_iter_140000.caffemodel"
 faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
-# load the face mask detector model from disk
-maskNet = load_model("MobileNetV2.model")
+backSub = cv2.createBackgroundSubtractorKNN()
 
+# load the face mask detector model from disk
+maskNet = load_model("saved_model/ResnetV2")
 # initialize the video stream
 print("[INFO] starting video stream...")
-vs = VideoStream(src=0).start()
+vs = VideoStream(src=1).start()
+fps = FPS().start()
 
 # loop over the frames from the video stream
 while True:
@@ -99,6 +102,10 @@ while True:
     # to have a maximum width of 400 pixels
     frame = vs.read()
     frame = imutils.resize(frame, width=400)
+
+    start = time.time()
+
+    end = 1
 
     # detect faces in the frame and determine if they are wearing a
     # face mask or not
@@ -157,14 +164,32 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
         cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
 
+        end = time.time()
+
+
+    #end = time.time()
+
+    seconds = end - start
+
+    frps = 1 / seconds
+
+
+    cv2.putText(frame, "FPS: " + str(round(frps,2)), (10,275), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0,255,255), 2)
+
     # show the output frame
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
+
+    fps.update()
 
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
         break
 
+
+fps.stop()
+print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()

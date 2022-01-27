@@ -1,0 +1,3 @@
+item { name: "NFMD", id: 1, display_name: "No Face Mask" }
+item { name: "IFMD", id: 2, display_name: "Incorrect Face Mask" }
+item { name: "CFMD", id: 3, display_name: "Correct Face Mask" }
